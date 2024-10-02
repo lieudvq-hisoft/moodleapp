@@ -146,6 +146,11 @@ export class CoreLoginSitePage implements OnInit {
     //     this.showKeyboard = !!CoreNavigator.getRouteBooleanParam('showKeyboard');
     // }
 
+    async ionViewWillEnter(): Promise<void> {
+        const url = 'https://lms.e-biz.com.vn/';
+        this.connect(url);
+    }
+
     async ngOnInit(): Promise<void> {
         const url = 'https://lms.e-biz.com.vn/';
         this.connect(url);
