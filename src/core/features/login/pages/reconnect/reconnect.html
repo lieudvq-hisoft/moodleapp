@@ -41,7 +41,7 @@
                     <p *ngIf="siteInfo?.siteName" class="ion-no-margin ion-no-padding core-sitename">
                         <core-format-text [text]="siteInfo?.siteName" [filter]="false" />
                     </p>
-                    <p class="core-siteurl" *ngIf="displaySiteUrl">{{site.siteUrl}}</p>
+                    <!-- <p class="core-siteurl" *ngIf="displaySiteUrl">{{site.siteUrl}}</p> -->
                 </div>
 
                 <div class="core-login-user">
@@ -75,10 +75,10 @@
                     </ion-button>
 
                     <!-- Forgotten password option. -->
-                    <ion-button *ngIf="showForgottenPassword" expand="block" fill="clear"
+                    <!-- <ion-button *ngIf="showForgottenPassword" expand="block" fill="clear"
                         class="core-login-forgotten-password core-button-as-link ion-text-wrap" (click)="forgottenPassword()">
                         {{ 'core.login.forgotaccount' | translate }}
-                    </ion-button>
+                    </ion-button> -->
                 </form>
 
                 <ng-container *ngIf="isBrowserSSO">
