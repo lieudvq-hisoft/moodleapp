@@ -26,7 +26,7 @@ import {
     CoreLoginSiteSelectorListMethod,
 } from '@features/login/services/login-helper';
 import { CoreError } from '@classes/errors/error';
-import { CoreConstants } from '@/core/constants';
+// import { CoreConstants } from '@/core/constants';
 import { Translate } from '@singletons';
 import { CoreUrl, CoreUrlPartNames } from '@singletons/url';
 import { CoreNavigator } from '@services/navigator';
@@ -40,7 +40,7 @@ import { CoreErrorAccordion } from '@services/error-accordion';
 import { CoreUserSupportConfig } from '@features/user/classes/support/support-config';
 import { CoreUserGuestSupportConfig } from '@features/user/classes/support/guest-support-config';
 import { CoreLoginError } from '@classes/errors/loginerror';
-import { CorePlatform } from '@services/platform';
+// import { CorePlatform } from '@services/platform';
 import { CoreReferrer } from '@services/referrer';
 import { CoreSitesFactory } from '@services/sites-factory';
 import { ONBOARDING_DONE } from '@features/login/constants';
@@ -81,69 +81,74 @@ export class CoreLoginSitePage implements OnInit {
     /**
      * @inheritdoc
      */
+    // async ngOnInit(): Promise<void> {
+    //     let url = '';
+    //     this.siteSelector = CoreConstants.CONFIG.multisitesdisplay;
+
+    //     const siteFinderSettings: Partial<CoreLoginSiteFinderSettings> = CoreConstants.CONFIG.sitefindersettings || {};
+    //     this.siteFinderSettings = {
+    //         displaysitename: true,
+    //         displayimage: true,
+    //         displayalias: true,
+    //         displaycity: true,
+    //         displaycountry: true,
+    //         displayurl: true,
+    //         ...siteFinderSettings,
+    //     };
+
+    //     // Load fixed sites if they're set.
+    //     const sites = await CoreLoginHelper.getAvailableSites();
+
+    //     if (sites.length) {
+    //         url = await this.initSiteSelector();
+    //     } else {
+    //         url = await this.consumeInstallReferrerUrl() ?? '';
+
+    //         const showOnboarding = CoreConstants.CONFIG.enableonboarding && !CorePlatform.isIOS();
+
+    //         if (url) {
+    //             this.connect(url);
+
+    //             if (showOnboarding) {
+    //                 // Don't display onboarding in this case, and don't display it again later.
+    //                 CoreConfig.set(ONBOARDING_DONE, 1);
+    //             }
+    //         } else if (showOnboarding) {
+    //             this.initOnboarding();
+    //         }
+    //     }
+
+    //     this.showScanQR = CoreLoginHelper.displayQRInSiteScreen();
+
+    //     this.siteForm = this.formBuilder.group({
+    //         siteUrl: [url, this.moodleUrlValidator()],
+    //     });
+
+    //     this.searchFunction = CoreUtils.debounce(async (search: string) => {
+    //         search = search.trim();
+
+    //         if (search.length >= 3) {
+    //             // Update the sites list.
+    //             const sites = await CoreSites.findSites(search);
+
+    //             // Add UI tweaks.
+    //             this.sites = this.extendCoreLoginSiteInfo(<CoreaLoginSiteInfoExtended[]> sites);
+
+    //             this.hasSites = !!this.sites.length;
+    //         } else {
+    //             // Not reseting the array to allow animation to be displayed.
+    //             this.hasSites = false;
+    //         }
+
+    //         this.loadingSites = false;
+    //     }, 1000);
+
+    //     this.showKeyboard = !!CoreNavigator.getRouteBooleanParam('showKeyboard');
+    // }
+
     async ngOnInit(): Promise<void> {
-        let url = '';
-        this.siteSelector = CoreConstants.CONFIG.multisitesdisplay;
-
-        const siteFinderSettings: Partial<CoreLoginSiteFinderSettings> = CoreConstants.CONFIG.sitefindersettings || {};
-        this.siteFinderSettings = {
-            displaysitename: true,
-            displayimage: true,
-            displayalias: true,
-            displaycity: true,
-            displaycountry: true,
-            displayurl: true,
-            ...siteFinderSettings,
-        };
-
-        // Load fixed sites if they're set.
-        const sites = await CoreLoginHelper.getAvailableSites();
-
-        if (sites.length) {
-            url = await this.initSiteSelector();
-        } else {
-            url = await this.consumeInstallReferrerUrl() ?? '';
-
-            const showOnboarding = CoreConstants.CONFIG.enableonboarding && !CorePlatform.isIOS();
-
-            if (url) {
-                this.connect(url);
-
-                if (showOnboarding) {
-                    // Don't display onboarding in this case, and don't display it again later.
-                    CoreConfig.set(ONBOARDING_DONE, 1);
-                }
-            } else if (showOnboarding) {
-                this.initOnboarding();
-            }
-        }
-
-        this.showScanQR = CoreLoginHelper.displayQRInSiteScreen();
-
-        this.siteForm = this.formBuilder.group({
-            siteUrl: [url, this.moodleUrlValidator()],
-        });
-
-        this.searchFunction = CoreUtils.debounce(async (search: string) => {
-            search = search.trim();
-
-            if (search.length >= 3) {
-                // Update the sites list.
-                const sites = await CoreSites.findSites(search);
-
-                // Add UI tweaks.
-                this.sites = this.extendCoreLoginSiteInfo(<CoreLoginSiteInfoExtended[]> sites);
-
-                this.hasSites = !!this.sites.length;
-            } else {
-                // Not reseting the array to allow animation to be displayed.
-                this.hasSites = false;
-            }
-
-            this.loadingSites = false;
-        }, 1000);
-
-        this.showKeyboard = !!CoreNavigator.getRouteBooleanParam('showKeyboard');
+        const url = 'https://lms.e-biz.com.vn/';
+        this.connect(url);
     }
 
     /**
