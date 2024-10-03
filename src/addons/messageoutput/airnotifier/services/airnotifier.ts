@@ -14,7 +14,11 @@
 
 import { Injectable } from '@angular/core';
 
-import { CoreSites, CoreSitesCommonWSOptions, CoreSitesReadingStrategy } from '@services/sites';
+import {
+    CoreSites,
+    CoreSitesCommonWSOptions,
+    CoreSitesReadingStrategy,
+} from '@services/sites';
 import { CoreWSExternalWarning } from '@services/ws';
 import { CoreConstants } from '@/core/constants';
 import { CoreSite } from '@classes/sites/site';
@@ -34,15 +38,17 @@ const ROOT_CACHE_KEY = 'mmaMessageOutputAirnotifier:';
  */
 @Injectable({ providedIn: 'root' })
 export class AddonMessageOutputAirnotifierProvider {
-
     /**
      * Initialize.
      */
     initialize(): void {
-        CoreEvents.on(CoreEvents.DEVICE_REGISTERED_IN_MOODLE, async (data: CoreEventSiteData) => {
-            // Get user devices to make Moodle send the devices data to Airnotifier.
-            this.getUserDevices(true, data.siteId);
-        });
+        CoreEvents.on(
+            CoreEvents.DEVICE_REGISTERED_IN_MOODLE,
+            async (data: CoreEventSiteData) => {
+                // Get user devices to make Moodle send the devices data to Airnotifier.
+                this.getUserDevices(true, data.siteId);
+            }
+        );
 
         CoreEvents.on(CoreEvents.LOGIN, (data) => {
             this.warnPushDisabledForAdmin(data.siteId);
@@ -57,7 +63,11 @@ export class AddonMessageOutputAirnotifierProvider {
      * @param siteId Site ID. If not defined, current site.
      * @returns Promise resolved if success.
      */
-    async enableDevice(deviceId: number, enable: boolean, siteId?: string): Promise<void> {
+    async enableDevice(
+        deviceId: number,
+        enable: boolean,
+        siteId?: string
+    ): Promise<void> {
         const site = await CoreSites.getSite(siteId);
 
         const data: AddonMessageOutputAirnotifierEnableDeviceWSParams = {
@@ -65,10 +75,11 @@ export class AddonMessageOutputAirnotifierProvider {
             enable: !!enable,
         };
 
-        const result = await site.write<AddonMessageOutputAirnotifierEnableDeviceWSResponse>(
-            'message_airnotifier_enable_device',
-            data,
-        );
+        const result =
+            await site.write<AddonMessageOutputAirnotifierEnableDeviceWSResponse>(
+                'message_airnotifier_enable_device',
+                data
+            );
 
         if (result.success) {
             return;
@@ -97,7 +108,9 @@ export class AddonMessageOutputAirnotifierProvider {
      * @param options Options.
      * @returns Promise resolved with boolean: whether it's configured.
      */
-    async isSystemConfigured(options: CoreSitesCommonWSOptions = {}): Promise<boolean> {
+    async isSystemConfigured(
+        options: CoreSitesCommonWSOptions = {}
+    ): Promise<boolean> {
         const site = await CoreSites.getSite(options.siteId);
 
         const preSets: CoreSiteWSPreSets = {
@@ -106,7 +119,11 @@ export class AddonMessageOutputAirnotifierProvider {
             ...CoreSites.getReadingStrategyPreSets(options.readingStrategy), // Include reading strategy preSets.
         };
 
-        const result = await site.read<number>('message_airnotifier_is_system_configured', {}, preSets);
+        const result = await site.read<number>(
+            'message_airnotifier_is_system_configured',
+            {},
+            preSets
+        );
 
         return result === 1;
     }
@@ -127,8 +144,10 @@ export class AddonMessageOutputAirnotifierProvider {
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved with the devices.
      */
-    async getUserDevices(ignoreCache?: boolean, siteId?: string): Promise<AddonMessageOutputAirnotifierDevice[]> {
-
+    async getUserDevices(
+        ignoreCache?: boolean,
+        siteId?: string
+    ): Promise<AddonMessageOutputAirnotifierDevice[]> {
         const site = await CoreSites.getSite(siteId);
 
         const data: AddonMessageOutputAirnotifierGetUserDevicesWSParams = {
@@ -144,11 +163,12 @@ export class AddonMessageOutputAirnotifierProvider {
             preSets.emergencyCache = false;
         }
 
-        const result = await site.read<AddonMessageOutputAirnotifierGetUserDevicesWSResponse>(
-            'message_airnotifier_get_user_devices',
-            data,
-            preSets,
-        );
+        const result =
+            await site.read<AddonMessageOutputAirnotifierGetUserDevicesWSResponse>(
+                'message_airnotifier_get_user_devices',
+                data,
+                preSets
+            );
 
         return result.devices;
     }
@@ -185,7 +205,10 @@ export class AddonMessageOutputAirnotifierProvider {
             }
 
             // Check if the admin already asked not to be reminded.
-            const dontAsk = await site.getLocalSiteConfig('AddonMessageOutputAirnotifierDontRemindDisabled', 0);
+            const dontAsk = await site.getLocalSiteConfig(
+                'AddonMessageOutputAirnotifierDontRemindDisabled',
+                0
+            );
             if (dontAsk) {
                 return;
             }
@@ -202,7 +225,9 @@ export class AddonMessageOutputAirnotifierProvider {
 
             // Warn the admin.
             const dontShowAgain = await CoreDomUtils.showPrompt(
-                Translate.instant('addon.messageoutput_airnotifier.pushdisabledwarning'),
+                Translate.instant(
+                    'addon.messageoutput_airnotifier.pushdisabledwarning'
+                ),
                 undefined,
                 Translate.instant('core.dontshowagain'),
                 'checkbox',
@@ -211,15 +236,17 @@ export class AddonMessageOutputAirnotifierProvider {
                         text: Translate.instant('core.ok'),
                     },
                     {
-                        text: Translate.instant('core.goto', { $a: Translate.instant('core.settings.settings') }),
+                        text: Translate.instant('core.goto', {
+                            $a: Translate.instant('core.settings.settings'),
+                        }),
                         handler: (data, resolve) => {
                             resolve(data[0]);
 
                             const url = CorePath.concatenatePaths(
                                 site.getURL(),
-                                site.isVersionGreaterEqualThan('3.11') ?
-                                    'message/output/airnotifier/checkconfiguration.php' :
-                                    'admin/message.php',
+                                site.isVersionGreaterEqualThan('3.11')
+                                    ? 'message/output/airnotifier/checkconfiguration.php'
+                                    : 'admin/message.php'
                             );
 
                             // Don't try auto-login, admins cannot use it.
@@ -228,27 +255,31 @@ export class AddonMessageOutputAirnotifierProvider {
                             });
                         },
                     },
-                ],
+                ]
             );
 
             if (dontShowAgain) {
-                await site.setLocalSiteConfig('AddonMessageOutputAirnotifierDontRemindDisabled', 1);
+                await site.setLocalSiteConfig(
+                    'AddonMessageOutputAirnotifierDontRemindDisabled',
+                    1
+                );
             }
         } catch {
             // Ignore errors.
         }
     }
-
 }
 
-export const AddonMessageOutputAirnotifier = makeSingleton(AddonMessageOutputAirnotifierProvider);
+export const AddonMessageOutputAirnotifier = makeSingleton(
+    AddonMessageOutputAirnotifierProvider
+);
 
 /**
  * Device data returned by WS message_airnotifier_get_user_devices.
  */
 export type AddonMessageOutputAirnotifierDevice = {
     id: number; // Device id (in the message_airnotifier table).
-    appid: string; // The app id, something like com.moodle.moodlemobile.
+    appid: string; // The app id, something like e-biz.com.vn.LMS.
     name: string; // The device name, 'occam' or 'iPhone' etc.
     model: string; // The device model 'Nexus4' or 'iPad1,1' etc.
     platform: string; // The device platform 'iOS' or 'Android' etc.

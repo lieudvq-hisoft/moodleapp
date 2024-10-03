@@ -14,7 +14,11 @@
 
 import { Injectable } from '@angular/core';
 import { ILocalNotification } from '@awesome-cordova-plugins/local-notifications';
-import { NotificationEventResponse, PushOptions, RegistrationEventResponse } from '@awesome-cordova-plugins/push/ngx';
+import {
+    NotificationEventResponse,
+    PushOptions,
+    RegistrationEventResponse,
+} from '@awesome-cordova-plugins/push/ngx';
 
 import { CoreApp } from '@services/app';
 import { CoreSites } from '@services/sites';
@@ -25,7 +29,14 @@ import { CoreText } from '@singletons/text';
 import { CoreConfig } from '@services/config';
 import { CoreConstants } from '@/core/constants';
 import { CoreSite } from '@classes/sites/site';
-import { makeSingleton, Badge, Device, Translate, ApplicationInit, NgZone } from '@singletons';
+import {
+    makeSingleton,
+    Badge,
+    Device,
+    Translate,
+    ApplicationInit,
+    NgZone,
+} from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreEvents } from '@singletons/events';
 import {
@@ -47,7 +58,10 @@ import { CoreSitesFactory } from '@services/sites-factory';
 import { CoreMainMenuProvider } from '@features/mainmenu/services/mainmenu';
 import { AsyncInstance, asyncInstance } from '@/core/utils/async-instance';
 import { CoreDatabaseTable } from '@classes/database/database-table';
-import { CoreDatabaseCachingStrategy, CoreDatabaseTableProxy } from '@classes/database/database-table-proxy';
+import {
+    CoreDatabaseCachingStrategy,
+    CoreDatabaseTableProxy,
+} from '@classes/database/database-table-proxy';
 import { CoreObject } from '@singletons/object';
 import { lazyMap, LazyMap } from '@/core/utils/lazy-map';
 import { CorePlatform } from '@services/platform';
@@ -62,47 +76,57 @@ import { CoreWait } from '@singletons/wait';
  */
 @Injectable({ providedIn: 'root' })
 export class CorePushNotificationsProvider {
-
     static readonly COMPONENT = 'CorePushNotificationsProvider';
 
     protected logger: CoreLogger;
     protected pushID?: string;
     protected badgesTable =
-        asyncInstance<CoreDatabaseTable<CorePushNotificationsBadgeDBRecord, CorePushNotificationsBadgeDBPrimaryKeys>>();
+        asyncInstance<
+            CoreDatabaseTable<
+                CorePushNotificationsBadgeDBRecord,
+                CorePushNotificationsBadgeDBPrimaryKeys
+            >
+        >();
 
     protected pendingUnregistersTable =
-        asyncInstance<CoreDatabaseTable<CorePushNotificationsPendingUnregisterDBRecord, 'siteid'>>();
-
-    protected registeredDevicesTables:
-        LazyMap<
-            AsyncInstance<
-                CoreDatabaseTable<
-                    CorePushNotificationsRegisteredDeviceDBRecord,
-                    CorePushNotificationsRegisteredDeviceDBPrimaryKeys,
-                    never
-                >
+        asyncInstance<
+            CoreDatabaseTable<
+                CorePushNotificationsPendingUnregisterDBRecord,
+                'siteid'
             >
-        >;
+        >();
+
+    protected registeredDevicesTables: LazyMap<
+        AsyncInstance<
+            CoreDatabaseTable<
+                CorePushNotificationsRegisteredDeviceDBRecord,
+                CorePushNotificationsRegisteredDeviceDBPrimaryKeys,
+                never
+            >
+        >
+    >;
 
     constructor() {
         this.logger = CoreLogger.getInstance('CorePushNotificationsProvider');
-        this.registeredDevicesTables = lazyMap(
-            siteId => asyncInstance(
-                () => CoreSites.getSiteTable<
+        this.registeredDevicesTables = lazyMap((siteId) =>
+            asyncInstance(() =>
+                CoreSites.getSiteTable<
                     CorePushNotificationsRegisteredDeviceDBRecord,
                     CorePushNotificationsRegisteredDeviceDBPrimaryKeys,
                     never
-                >(
-                    REGISTERED_DEVICES_TABLE_NAME,
-                    {
-                        siteId,
-                        config: { cachingStrategy: CoreDatabaseCachingStrategy.None },
-                        primaryKeyColumns: [...REGISTERED_DEVICES_TABLE_PRIMARY_KEYS],
-                        rowIdColumn: null,
-                        onDestroy: () => delete this.registeredDevicesTables[siteId],
+                >(REGISTERED_DEVICES_TABLE_NAME, {
+                    siteId,
+                    config: {
+                        cachingStrategy: CoreDatabaseCachingStrategy.None,
                     },
-                ),
-            ),
+                    primaryKeyColumns: [
+                        ...REGISTERED_DEVICES_TABLE_PRIMARY_KEYS,
+                    ],
+                    rowIdColumn: null,
+                    onDestroy: () =>
+                        delete this.registeredDevicesTables[siteId],
+                })
+            )
         );
     }
 
@@ -134,7 +158,7 @@ export class CorePushNotificationsProvider {
             try {
                 await this.registerDeviceOnMoodle();
             } catch (error) {
-                this.logger.error('Can\'t register device', error);
+                this.logger.error("Can't register device", error);
             }
         });
 
@@ -145,13 +169,16 @@ export class CorePushNotificationsProvider {
                     this.cleanSiteCounters(site.getId()),
                 ]);
             } catch (error) {
-                this.logger.warn('Can\'t unregister device', error);
+                this.logger.warn("Can't unregister device", error);
             }
         });
 
-        CoreEvents.on(CoreMainMenuProvider.MAIN_MENU_HANDLER_BADGE_UPDATED, (data) => {
-            this.updateAddonCounter(data.handler, data.value, data.siteId);
-        });
+        CoreEvents.on(
+            CoreMainMenuProvider.MAIN_MENU_HANDLER_BADGE_UPDATED,
+            (data) => {
+                this.updateAddonCounter(data.handler, data.value, data.siteId);
+            }
+        );
 
         // Listen for local notification clicks (generated by the app).
         CoreLocalNotifications.registerClick<CorePushNotificationsNotificationBasicData>(
@@ -164,7 +191,7 @@ export class CorePushNotificationsProvider {
                 });
 
                 this.notificationClicked(notification);
-            },
+            }
         );
 
         // Listen for local notification dismissed events.
@@ -177,7 +204,7 @@ export class CorePushNotificationsProvider {
                     type: CoreAnalyticsEventType.PUSH_NOTIFICATION,
                     data: notification,
                 });
-            },
+            }
         );
     }
 
@@ -211,17 +238,23 @@ export class CorePushNotificationsProvider {
         }
 
         const database = CoreApp.getDB();
-        const badgesTable = new CoreDatabaseTableProxy<CorePushNotificationsBadgeDBRecord, CorePushNotificationsBadgeDBPrimaryKeys>(
+        const badgesTable = new CoreDatabaseTableProxy<
+            CorePushNotificationsBadgeDBRecord,
+            CorePushNotificationsBadgeDBPrimaryKeys
+        >(
             { cachingStrategy: CoreDatabaseCachingStrategy.Eager },
             database,
             BADGE_TABLE_NAME,
-            [...BADGE_TABLE_PRIMARY_KEYS],
+            [...BADGE_TABLE_PRIMARY_KEYS]
         );
-        const pendingUnregistersTable = new CoreDatabaseTableProxy<CorePushNotificationsPendingUnregisterDBRecord, 'siteid'>(
+        const pendingUnregistersTable = new CoreDatabaseTableProxy<
+            CorePushNotificationsPendingUnregisterDBRecord,
+            'siteid'
+        >(
             { cachingStrategy: CoreDatabaseCachingStrategy.Eager },
             database,
             PENDING_UNREGISTER_TABLE_NAME,
-            ['siteid'],
+            ['siteid']
         );
 
         await Promise.all([
@@ -297,7 +330,10 @@ export class CorePushNotificationsProvider {
         let soundEnabled = true;
 
         if (CoreLocalNotifications.canDisableSound()) {
-            soundEnabled = await CoreConfig.get<boolean>(CoreConstants.SETTINGS_NOTIFICATION_SOUND, true);
+            soundEnabled = await CoreConfig.get<boolean>(
+                CoreConstants.SETTINGS_NOTIFICATION_SOUND,
+                true
+            );
         }
 
         return {
@@ -333,17 +369,19 @@ export class CorePushNotificationsProvider {
      */
     protected getRequiredRegisterData(): CoreUserAddUserDeviceWSParams {
         if (!this.pushID) {
-            throw new CoreError('Cannot get register data because pushID is not set.');
+            throw new CoreError(
+                'Cannot get register data because pushID is not set.'
+            );
         }
 
         return {
-            appid:      CoreConstants.CONFIG.app_id,
-            name:       Device.manufacturer || '',
-            model:      Device.model,
-            platform:   Device.platform + '-fcm',
-            version:    Device.version,
-            pushid:     this.pushID,
-            uuid:       Device.uuid,
+            appid: CoreConstants.CONFIG.app_id,
+            name: Device.manufacturer || '',
+            model: Device.model,
+            platform: Device.platform + '-fcm',
+            version: Device.version,
+            pushid: this.pushID,
+            uuid: Device.uuid,
         };
     }
 
@@ -365,7 +403,10 @@ export class CorePushNotificationsProvider {
      * @returns Promise resolved when done. This promise is never rejected.
      * @deprecated since 4.3. Use CoreAnalytics.logEvent instead.
      */
-    async logEvent(eventName: string, data: Record<string, string | number | boolean | undefined>): Promise<void> {
+    async logEvent(
+        eventName: string,
+        data: Record<string, string | number | boolean | undefined>
+    ): Promise<void> {
         if (eventName !== 'view_item' && eventName !== 'view_item_list') {
             return CoreAnalytics.logEvent({
                 type: CoreAnalyticsEventType.PUSH_NOTIFICATION,
@@ -378,8 +419,11 @@ export class CorePushNotificationsProvider {
         delete data.name;
 
         return CoreAnalytics.logEvent({
-            type: eventName === 'view_item' ? CoreAnalyticsEventType.VIEW_ITEM : CoreAnalyticsEventType.VIEW_ITEM_LIST,
-            ws: <string> data.moodleaction ?? '',
+            type:
+                eventName === 'view_item'
+                    ? CoreAnalyticsEventType.VIEW_ITEM
+                    : CoreAnalyticsEventType.VIEW_ITEM_LIST,
+            ws: <string>data.moodleaction ?? '',
             name,
             data,
         });
@@ -401,7 +445,7 @@ export class CorePushNotificationsProvider {
         itemName: string | undefined,
         itemCategory: string | undefined,
         wsName: string,
-        data?: Record<string, string | number | boolean | undefined>,
+        data?: Record<string, string | number | boolean | undefined>
     ): Promise<void> {
         data = data || {};
         data.id = itemId;
@@ -425,7 +469,7 @@ export class CorePushNotificationsProvider {
     logViewListEvent(
         itemCategory: string,
         wsName: string,
-        data?: Record<string, string | number | boolean | undefined>,
+        data?: Record<string, string | number | boolean | undefined>
     ): Promise<void> {
         data = data || {};
         data.moodleaction = wsName;
@@ -441,7 +485,9 @@ export class CorePushNotificationsProvider {
      * @param data Notification data.
      * @returns Promise resolved when done.
      */
-    async notificationClicked(data: CorePushNotificationsNotificationBasicData): Promise<void> {
+    async notificationClicked(
+        data: CorePushNotificationsNotificationBasicData
+    ): Promise<void> {
         await ApplicationInit.donePromise;
 
         // This code is also done when clicking local notifications. If it's modified, it should be modified in there too.
@@ -457,14 +503,16 @@ export class CorePushNotificationsProvider {
         }
 
         // User not logged in, wait for the path to be a "valid" path (not a parent path used when starting the app).
-        await CoreWait.waitFor(() => {
-            const currentPath = CoreNavigator.getCurrentPath();
+        await CoreWait.waitFor(
+            () => {
+                const currentPath = CoreNavigator.getCurrentPath();
 
-            return currentPath !== '/' && currentPath !== '/login';
-        }, { timeout: 400 });
+                return currentPath !== '/' && currentPath !== '/login';
+            },
+            { timeout: 400 }
+        );
 
         await CorePushNotificationsDelegate.clicked(data);
-
     }
 
     /**
@@ -475,16 +523,27 @@ export class CorePushNotificationsProvider {
      * @param notification Notification received.
      * @returns Promise resolved when done.
      */
-    async onMessageReceived(notification: NotificationEventResponse): Promise<void> {
-        const rawData: CorePushNotificationsNotificationBasicRawData = notification ? notification.additionalData : {};
+    async onMessageReceived(
+        notification: NotificationEventResponse
+    ): Promise<void> {
+        const rawData: CorePushNotificationsNotificationBasicRawData =
+            notification ? notification.additionalData : {};
 
         // Parse some fields and add some extra data.
-        const data: CorePushNotificationsNotificationBasicData = Object.assign(rawData, {
-            title: notification.title,
-            message: notification.message,
-            customdata: typeof rawData.customdata == 'string' ?
-                CoreText.parseJSON<Record<string, string|number>>(rawData.customdata, {}) : rawData.customdata,
-        });
+        const data: CorePushNotificationsNotificationBasicData = Object.assign(
+            rawData,
+            {
+                title: notification.title,
+                message: notification.message,
+                customdata:
+                    typeof rawData.customdata == 'string'
+                        ? CoreText.parseJSON<Record<string, string | number>>(
+                              rawData.customdata,
+                              {}
+                          )
+                        : rawData.customdata,
+            }
+        );
 
         let site: CoreSite | undefined;
 
@@ -514,10 +573,14 @@ export class CorePushNotificationsProvider {
         if (extraFeatures && isAndroid && CoreUtils.isFalseOrZero(data.notif)) {
             // It's a message, use messaging style. Ionic Native doesn't specify this option.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (<any> localNotif).text = [
+            (<any>localNotif).text = [
                 {
                     message: notification.message,
-                    person: data.sender ?? (data.conversationtype == '2' ? data.userfromfullname : ''),
+                    person:
+                        data.sender ??
+                        (data.conversationtype == '2'
+                            ? data.userfromfullname
+                            : ''),
                     personIcon: data.senderImage,
                 },
             ];
@@ -528,7 +591,7 @@ export class CorePushNotificationsProvider {
             localNotif.icon = notification.image;
             // This feature isn't supported by the official plugin, we use a fork.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (<any> localNotif).iconType = data['image-type'];
+            (<any>localNotif).iconType = data['image-type'];
 
             localNotif.summary = data.summaryText;
 
@@ -537,10 +600,14 @@ export class CorePushNotificationsProvider {
             }
         }
 
-        CoreLocalNotifications.schedule(localNotif, CorePushNotificationsProvider.COMPONENT, data.site || '', true);
+        CoreLocalNotifications.schedule(
+            localNotif,
+            CorePushNotificationsProvider.COMPONENT,
+            data.site || '',
+            true
+        );
 
         await this.notifyReceived(notification, data);
-
     }
 
     /**
@@ -552,7 +619,7 @@ export class CorePushNotificationsProvider {
      */
     protected async notifyReceived(
         notification: NotificationEventResponse,
-        data: CorePushNotificationsNotificationBasicData,
+        data: CorePushNotificationsNotificationBasicData
     ): Promise<void> {
         await ApplicationInit.donePromise;
 
@@ -574,19 +641,27 @@ export class CorePushNotificationsProvider {
 
         const data: CoreUserRemoveUserDeviceWSParams = {
             appid: CoreConstants.CONFIG.app_id,
-            uuid:  Device.uuid,
+            uuid: Device.uuid,
         };
         let response: CoreUserRemoveUserDeviceWSResponse;
 
         try {
-            response = await site.write<CoreUserRemoveUserDeviceWSResponse>('core_user_remove_user_device', data);
+            response = await site.write<CoreUserRemoveUserDeviceWSResponse>(
+                'core_user_remove_user_device',
+                data
+            );
         } catch (error) {
-            if (CoreUtils.isWebServiceError(error) || CoreUtils.isExpiredTokenError(error)) {
+            if (
+                CoreUtils.isWebServiceError(error) ||
+                CoreUtils.isExpiredTokenError(error)
+            ) {
                 // Cannot unregister. Don't try again.
-                await CoreUtils.ignoreErrors(this.pendingUnregistersTable.delete({
-                    token: site.getToken(),
-                    siteid: site.getId(),
-                }));
+                await CoreUtils.ignoreErrors(
+                    this.pendingUnregistersTable.delete({
+                        token: site.getToken(),
+                        siteid: site.getId(),
+                    })
+                );
 
                 throw error;
             }
@@ -606,12 +681,18 @@ export class CorePushNotificationsProvider {
             throw new CoreError('Cannot unregister device');
         }
 
-        await CoreUtils.ignoreErrors(Promise.all([
-            // Remove the device from the local DB.
-            this.registeredDevicesTables[site.getId()].delete(this.getRequiredRegisterData()),
-            // Remove pending unregisters for this site.
-            this.pendingUnregistersTable.deleteByPrimaryKey({ siteid: site.getId() }),
-        ]));
+        await CoreUtils.ignoreErrors(
+            Promise.all([
+                // Remove the device from the local DB.
+                this.registeredDevicesTables[site.getId()].delete(
+                    this.getRequiredRegisterData()
+                ),
+                // Remove pending unregisters for this site.
+                this.pendingUnregistersTable.deleteByPrimaryKey({
+                    siteid: site.getId(),
+                }),
+            ])
+        );
     }
 
     /**
@@ -623,7 +704,11 @@ export class CorePushNotificationsProvider {
      * @param siteId Site ID. If not defined, use current site.
      * @returns Promise resolved with the stored badge counter for the addon on the site.
      */
-    async updateAddonCounter(addon: string, value: number, siteId?: string): Promise<number> {
+    async updateAddonCounter(
+        addon: string,
+        value: number,
+        siteId?: string
+    ): Promise<number> {
         if (!CorePushNotificationsDelegate.isCounterHandlerRegistered(addon)) {
             return 0;
         }
@@ -644,9 +729,14 @@ export class CorePushNotificationsProvider {
     async updateAppCounter(): Promise<number> {
         const sitesIds = await CoreSites.getSitesIds();
 
-        const counters = await Promise.all(sitesIds.map((siteId) => this.getAddonBadge(siteId)));
+        const counters = await Promise.all(
+            sitesIds.map((siteId) => this.getAddonBadge(siteId))
+        );
 
-        const total = counters.reduce((previous, counter) => previous + counter, 0);
+        const total = counters.reduce(
+            (previous, counter) => previous + counter,
+            0
+        );
 
         if (CorePlatform.isMobile()) {
             // Set the app badge on mobile.
@@ -666,9 +756,16 @@ export class CorePushNotificationsProvider {
     async updateSiteCounter(siteId: string): Promise<number> {
         const addons = CorePushNotificationsDelegate.getCounterHandlers();
 
-        const counters = await Promise.all(Object.values(addons).map((addon) => this.getAddonBadge(siteId, addon)));
+        const counters = await Promise.all(
+            Object.values(addons).map((addon) =>
+                this.getAddonBadge(siteId, addon)
+            )
+        );
 
-        const total = counters.reduce((previous, counter) => previous + counter, 0);
+        const total = counters.reduce(
+            (previous, counter) => previous + counter,
+            0
+        );
 
         // Save the counter on site.
         await this.saveAddonBadge(total, siteId);
@@ -690,32 +787,48 @@ export class CorePushNotificationsProvider {
 
             const pushObject = Push.init(options);
 
-            pushObject.on('notification').subscribe((notification: NotificationEventResponse | {registrationType: string}) => {
-                // Execute the callback in the Angular zone, so change detection doesn't stop working.
-                NgZone.run(() => {
-                    if ('registrationType' in notification) {
-                        // Not a valid notification, ignore.
-                        return;
+            pushObject
+                .on('notification')
+                .subscribe(
+                    (
+                        notification:
+                            | NotificationEventResponse
+                            | { registrationType: string }
+                    ) => {
+                        // Execute the callback in the Angular zone, so change detection doesn't stop working.
+                        NgZone.run(() => {
+                            if ('registrationType' in notification) {
+                                // Not a valid notification, ignore.
+                                return;
+                            }
+
+                            this.logger.log(
+                                'Received a notification',
+                                notification
+                            );
+                            this.onMessageReceived(notification);
+                        });
                     }
+                );
 
-                    this.logger.log('Received a notification', notification);
-                    this.onMessageReceived(notification);
-                });
-            });
+            pushObject
+                .on('registration')
+                .subscribe((data: RegistrationEventResponse) => {
+                    // Execute the callback in the Angular zone, so change detection doesn't stop working.
+                    NgZone.run(() => {
+                        this.pushID = data.registrationId;
+                        if (
+                            !CoreSites.isLoggedIn() ||
+                            !this.canRegisterOnMoodle()
+                        ) {
+                            return;
+                        }
 
-            pushObject.on('registration').subscribe((data: RegistrationEventResponse) => {
-                // Execute the callback in the Angular zone, so change detection doesn't stop working.
-                NgZone.run(() => {
-                    this.pushID = data.registrationId;
-                    if (!CoreSites.isLoggedIn() || !this.canRegisterOnMoodle()) {
-                        return;
-                    }
-
-                    this.registerDeviceOnMoodle().catch((error) => {
-                        this.logger.error('Can\'t register device', error);
+                        this.registerDeviceOnMoodle().catch((error) => {
+                            this.logger.error("Can't register device", error);
+                        });
                     });
                 });
-            });
 
             pushObject.on('error').subscribe((error: Error) => {
                 // Execute the callback in the Angular zone, so change detection doesn't stop working.
@@ -737,7 +850,10 @@ export class CorePushNotificationsProvider {
      * @param forceUnregister Whether to force unregister and register.
      * @returns Promise resolved when device is registered.
      */
-    async registerDeviceOnMoodle(siteId?: string, forceUnregister?: boolean): Promise<void> {
+    async registerDeviceOnMoodle(
+        siteId?: string,
+        forceUnregister?: boolean
+    ): Promise<void> {
         this.logger.debug('Register device on Moodle.');
 
         if (!this.canRegisterOnMoodle()) {
@@ -747,38 +863,61 @@ export class CorePushNotificationsProvider {
         const site = await CoreSites.getSite(siteId);
 
         try {
-
             const data = this.getRequiredRegisterData();
             data.publickey = await this.getPublicKeyForSite(site);
 
-            const neededActions = await this.getRegisterDeviceActions(data, site, forceUnregister);
+            const neededActions = await this.getRegisterDeviceActions(
+                data,
+                site,
+                forceUnregister
+            );
 
             if (neededActions.unregister) {
                 // Unregister the device first.
-                await CoreUtils.ignoreErrors(this.unregisterDeviceOnMoodle(site));
+                await CoreUtils.ignoreErrors(
+                    this.unregisterDeviceOnMoodle(site)
+                );
             }
 
             if (neededActions.register) {
                 // Now register the device.
                 const addDeviceResponse =
-                    await site.write<CoreUserAddUserDeviceWSResponse>('core_user_add_user_device', CoreUtils.clone(data));
+                    await site.write<CoreUserAddUserDeviceWSResponse>(
+                        'core_user_add_user_device',
+                        CoreUtils.clone(data)
+                    );
 
                 const deviceAlreadyRegistered =
-                    addDeviceResponse[0] && addDeviceResponse[0].find(warning => warning.warningcode === 'existingkeyforthisuser');
+                    addDeviceResponse[0] &&
+                    addDeviceResponse[0].find(
+                        (warning) =>
+                            warning.warningcode === 'existingkeyforthisuser'
+                    );
                 if (deviceAlreadyRegistered && data.publickey) {
                     // Device already registered, make sure the public key is up to date.
                     await this.updatePublicKeyOnMoodle(site, data);
                 }
 
-                CoreEvents.trigger(CoreEvents.DEVICE_REGISTERED_IN_MOODLE, {}, site.getId());
+                CoreEvents.trigger(
+                    CoreEvents.DEVICE_REGISTERED_IN_MOODLE,
+                    {},
+                    site.getId()
+                );
 
                 // Insert the device in the local DB.
-                await CoreUtils.ignoreErrors(this.registeredDevicesTables[site.getId()].insert(data));
+                await CoreUtils.ignoreErrors(
+                    this.registeredDevicesTables[site.getId()].insert(data)
+                );
             } else if (neededActions.updatePublicKey) {
                 // Device already registered, make sure the public key is up to date.
                 const response = await this.updatePublicKeyOnMoodle(site, data);
 
-                if (response?.warnings?.find(warning => warning.warningcode === 'devicedoesnotexist')) {
+                if (
+                    response?.warnings?.find(
+                        (warning) =>
+                            warning.warningcode === 'devicedoesnotexist'
+                    )
+                ) {
                     // The device doesn't exist in the server. Remove the device from the local DB and try again.
                     await this.registeredDevicesTables[site.getId()].delete({
                         appid: data.appid,
@@ -793,7 +932,11 @@ export class CorePushNotificationsProvider {
             }
         } finally {
             // Remove pending unregisters for this site.
-            await CoreUtils.ignoreErrors(this.pendingUnregistersTable.deleteByPrimaryKey({ siteid: site.getId() }));
+            await CoreUtils.ignoreErrors(
+                this.pendingUnregistersTable.deleteByPrimaryKey({
+                    siteid: site.getId(),
+                })
+            );
         }
     }
 
@@ -803,7 +946,9 @@ export class CorePushNotificationsProvider {
      * @param site Site to register
      * @returns Public key, undefined if the site or the device doesn't support encryption.
      */
-    protected async getPublicKeyForSite(site: CoreSite): Promise<string | undefined> {
+    protected async getPublicKeyForSite(
+        site: CoreSite
+    ): Promise<string | undefined> {
         if (!site.wsAvailable('core_user_update_user_device_public_key')) {
             return;
         }
@@ -835,7 +980,7 @@ export class CorePushNotificationsProvider {
      */
     protected async updatePublicKeyOnMoodle(
         site: CoreSite,
-        data: CoreUserAddUserDeviceWSParams,
+        data: CoreUserAddUserDeviceWSParams
     ): Promise<CoreUserUpdateUserDevicePublicKeyWSResponse | undefined> {
         if (!data.publickey) {
             return;
@@ -849,7 +994,10 @@ export class CorePushNotificationsProvider {
             publickey: data.publickey,
         };
 
-        return await site.write<CoreUserUpdateUserDevicePublicKeyWSResponse>('core_user_update_user_device_public_key', params);
+        return await site.write<CoreUserUpdateUserDevicePublicKeyWSResponse>(
+            'core_user_update_user_device_public_key',
+            params
+        );
     }
 
     /**
@@ -859,9 +1007,15 @@ export class CorePushNotificationsProvider {
      * @param addon Registered addon name. If not defined it will store the site total.
      * @returns Promise resolved with the stored badge counter for the addon or site or 0 if none.
      */
-    protected async getAddonBadge(siteId?: string, addon: string = 'site'): Promise<number> {
+    protected async getAddonBadge(
+        siteId?: string,
+        addon: string = 'site'
+    ): Promise<number> {
         try {
-            const entry = await this.badgesTable.getOne({ siteid: siteId, addon });
+            const entry = await this.badgesTable.getOne({
+                siteid: siteId,
+                addon,
+            });
 
             return entry?.number || 0;
         } catch (err) {
@@ -876,19 +1030,29 @@ export class CorePushNotificationsProvider {
      * @returns Promise resolved when done.
      */
     async retryUnregisters(siteId?: string): Promise<void> {
-        const results = await this.pendingUnregistersTable.getMany(CoreObject.withoutEmpty({ siteid: siteId }));
+        const results = await this.pendingUnregistersTable.getMany(
+            CoreObject.withoutEmpty({ siteid: siteId })
+        );
 
-        await Promise.all(results.map(async (result) => {
-            // Create a temporary site to unregister.
-            const tmpSite = CoreSitesFactory.makeSite(
-                result.siteid,
-                result.siteurl,
-                result.token,
-                { info: CoreText.parseJSON<CoreSiteInfo | null>(result.info, null) || undefined },
-            );
+        await Promise.all(
+            results.map(async (result) => {
+                // Create a temporary site to unregister.
+                const tmpSite = CoreSitesFactory.makeSite(
+                    result.siteid,
+                    result.siteurl,
+                    result.token,
+                    {
+                        info:
+                            CoreText.parseJSON<CoreSiteInfo | null>(
+                                result.info,
+                                null
+                            ) || undefined,
+                    }
+                );
 
-            await this.unregisterDeviceOnMoodle(tmpSite);
-        }));
+                await this.unregisterDeviceOnMoodle(tmpSite);
+            })
+        );
     }
 
     /**
@@ -899,7 +1063,11 @@ export class CorePushNotificationsProvider {
      * @param addon Registered addon name. If not defined it will store the site total.
      * @returns Promise resolved with the stored badge counter for the addon or site.
      */
-    protected async saveAddonBadge(value: number, siteId?: string, addon: string = 'site'): Promise<number> {
+    protected async saveAddonBadge(
+        value: number,
+        siteId?: string,
+        addon: string = 'site'
+    ): Promise<number> {
         siteId = siteId || CoreSites.getCurrentSiteId();
 
         await this.badgesTable.insert({
@@ -922,7 +1090,7 @@ export class CorePushNotificationsProvider {
     protected async getRegisterDeviceActions(
         data: CoreUserAddUserDeviceWSParams,
         site: CoreSite,
-        forceUnregister?: boolean,
+        forceUnregister?: boolean
     ): Promise<RegisterDeviceActions> {
         if (forceUnregister) {
             // No need to check if device is stored, always unregister and register the device.
@@ -941,7 +1109,7 @@ export class CorePushNotificationsProvider {
                 name: data.name,
                 model: data.model,
                 platform: data.platform,
-            }),
+            })
         );
 
         let isStored = false;
@@ -949,10 +1117,14 @@ export class CorePushNotificationsProvider {
         let updatePublicKey = false;
 
         (records || []).forEach((record) => {
-            if (record.version == data.version && record.pushid == data.pushid) {
+            if (
+                record.version == data.version &&
+                record.pushid == data.pushid
+            ) {
                 // The device is already stored.
                 isStored = true;
-                updatePublicKey = !!data.publickey && record.publickey !== data.publickey;
+                updatePublicKey =
+                    !!data.publickey && record.publickey !== data.publickey;
             } else {
                 // The version or pushid has changed.
                 versionOrPushChanged = true;
@@ -965,10 +1137,11 @@ export class CorePushNotificationsProvider {
             updatePublicKey,
         };
     }
-
 }
 
-export const CorePushNotifications = makeSingleton(CorePushNotificationsProvider);
+export const CorePushNotifications = makeSingleton(
+    CorePushNotificationsProvider
+);
 
 /**
  * Additional data sent in push notifications.
@@ -997,10 +1170,13 @@ export type CorePushNotificationsNotificationBasicRawData = {
 /**
  * Additional data sent in push notifications, with some calculated data.
  */
-export type CorePushNotificationsNotificationBasicData = Omit<CorePushNotificationsNotificationBasicRawData, 'customdata'> & {
+export type CorePushNotificationsNotificationBasicData = Omit<
+    CorePushNotificationsNotificationBasicRawData,
+    'customdata'
+> & {
     title?: string; // Notification title.
     message?: string; // Notification message.
-    customdata?: Record<string, string|number>; // Parsed custom data.
+    customdata?: Record<string, string | number>; // Parsed custom data.
 };
 
 /**
@@ -1022,7 +1198,7 @@ export type CoreUserRemoveUserDeviceWSResponse = {
  * Params of core_user_add_user_device WS.
  */
 export type CoreUserAddUserDeviceWSParams = {
-    appid: string; // The app id, usually something like com.moodle.moodlemobile.
+    appid: string; // The app id, usually something like e-biz.com.vn.LMS.
     name: string; // The device name, 'occam' or 'iPhone' etc.
     model: string; // The device model 'Nexus4' or 'iPad1,1' etc.
     platform: string; // The device platform 'iOS' or 'Android' etc.
