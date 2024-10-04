@@ -11,12 +11,12 @@
     </ion-button>
 </div>
 
-<ng-container *ngIf="showScanQR">
+<!-- <ng-container *ngIf="showScanQR">
     <ion-button expand="block" fill="outline" class="ion-margin core-login-site-qrcode" (click)="showInstructionsAndScanQR()">
         <ion-icon slot="start" name="fas-qrcode" aria-hidden="true" />
         {{ 'core.scanqr' | translate }}
     </ion-button>
-</ng-container>
+</ng-container> -->
 
 <!-- Identity providers. -->
 <ion-list *ngIf="identityProviders.length" class="core-login-identity-providers">
